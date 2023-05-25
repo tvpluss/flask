@@ -9,13 +9,13 @@ def index():
     return jsonify({"Choo Choo": "Welcome to your Flask app 🚅"})
 
 
-@app.route('/save_file')
-def saveFile():
+@app.route('/save_file/<content>')
+def saveFile(content):
     # open a file in write mode
     file = open('example.txt', 'w')
 
     # write some text to the file
-    file.write('Hello, world!')
+    file.write(f'Content: {content}')
 
     # close the file
     file.close()
