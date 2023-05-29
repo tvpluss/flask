@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 from dotenv import load_dotenv
 
@@ -40,9 +40,20 @@ class DB:
                     rows = curs.fetchall()
                     return rows
                 else:
-                    select_query = """SELECT * FROM public."Rating";"""
-                    curs.execute(select_query)
-                    rows = curs.fetchall()
-                    return rows
+                    return None
         finally:
             self.connection_pool.putconn(conn)
+
+
+if __name__ == '__main__':
+    load_dotenv()
+    dbname = os.environ.get('PGDATABASE')
+    user = os.environ.get('PGUSER')
+    port = os.environ.get('PGPORT')
+    password = os.environ.get('PGPASSWORD')
+    host = os.environ.get('PGHOST')
+    print(f'connecting to db..., {dbname}, {host}, {port}')
+    db = DB(dbname, user, port, password, host)
+    print(f'connected to db')
+    print(db.getRatings(datetime(year=2023, month=4, day=8),
+          datetime(year=2023, month=4, day=9)))
