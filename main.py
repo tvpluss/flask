@@ -1,12 +1,13 @@
 from dotenv import load_dotenv
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request, Response
 import os
 import river
 import pickle
 from river import reco
 from logging.config import dictConfig
+from db import DB
 
-
+load_dotenv()
 dictConfig(
 
     {
@@ -42,7 +43,17 @@ dictConfig(
     }
 
 )
+api_secret_key = os.environ.get('api_secret_key')
 app = Flask(__name__)
+try:
+    dbname = os.environ.get('PGDATABASE')
+    user = os.environ.get('PGUSER')
+    port = os.environ.get('PGPORT')
+    password = os.environ.get('PGPASSWORD')
+    host = os.environ.get('PGHOST')
+    db = DB(dbname, user, port, password, host)
+except Exception as e:
+    app.logger.error(f'Error connecting to db: {e}')
 
 
 @app.route('/')
@@ -86,8 +97,23 @@ def readFile():
         return contents
 
 
+@app.route('/test_db')
+def testDB():
+    books = db.getBooks()
+    print(books)
+    return jsonify(db.getBooks())
+
+
+@app.route('/recommender/<uid>')
+def recommender(uid):
+    key = request.headers.get('x-api-key')
+    if key is None or key != api_secret_key:
+        return Response(response="Unauthorized", status=401)
+    print(f'getting recommender for uid: {uid}')
+    return 'Authorized'
+
+
 if __name__ == '__main__':
-    load_dotenv()
 
     app.logger.info(f'Running on port {os.environ.get("PORT")}')
-    app.run(port=os.getenv("PORT", default=5000))
+    app.run(debug=True, port=os.getenv("PORT", default=5000))
