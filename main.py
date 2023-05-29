@@ -1,8 +1,47 @@
+from dotenv import load_dotenv
 from flask import Flask, jsonify
 import os
 import river
 import pickle
 from river import reco
+from logging.config import dictConfig
+
+
+dictConfig(
+
+    {
+
+        "version": 1,
+
+        "formatters": {
+
+            "default": {
+
+                "format": "[%(asctime)s] %(levelname)s in %(module)s: %(message)s",
+
+            }
+
+        },
+
+        "handlers": {
+
+            "console": {
+
+                "class": "logging.StreamHandler",
+
+                "stream": "ext://sys.stdout",
+
+                "formatter": "default",
+
+            }
+
+        },
+
+        "root": {"level": "DEBUG", "handlers": ["console"]},
+
+    }
+
+)
 app = Flask(__name__)
 
 
@@ -48,4 +87,7 @@ def readFile():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, port=os.getenv("PORT", default=5000))
+    load_dotenv()
+
+    app.logger.info(f'Running on port {os.environ.get("PORT")}')
+    app.run(port=os.getenv("PORT", default=5000))
