@@ -51,6 +51,7 @@ try:
     port = os.environ.get('PGPORT')
     password = os.environ.get('PGPASSWORD')
     host = os.environ.get('PGHOST')
+    print(f'connecting to db..., {dbname}, {host}, {port}')
     db = DB(dbname, user, port, password, host)
 except Exception as e:
     app.logger.error(f'Error connecting to db: {e}')
