@@ -1,48 +1,59 @@
-from datetime import datetime, timedelta
+from sqlalchemy import create_engine, text
+from sqlalchemy.pool import QueuePool
 import os
+import pandas as pd
+from datetime import datetime
 from dotenv import load_dotenv
-
-import psycopg2
-
-from psycopg2 import pool
 
 
 class DB:
     def __init__(self, dbname, user, port, password, host) -> None:
-        self.dbname = dbname
-        self.user = user
-        self.port = port
-        self.password = password
-        self.host = host
-        self.connection_pool = pool.SimpleConnectionPool(
-            minconn=1, maxconn=10,
-            dbname=self.dbname, user=self.user, port=self.port,
-            password=self.password, host=self.host)
+        # pool = QueuePool(max_overflow=5, pool_size=20, recycle=3600)
+        self.engine = create_engine(
+            f'postgresql+psycopg2://{user}:{password}@{host}:{port}/{dbname}', pool_size=10, pool_recycle=3600, max_overflow=5)
 
-    def getBooks(self):
-        conn = self.connection_pool.getconn()
-        try:
-            with conn.cursor() as curs:
-                select_query = """SELECT * FROM public."Book" LIMIT 5;"""
-                curs.execute(select_query)
-                rows = curs.fetchall()
-                return rows
-        finally:
-            self.connection_pool.putconn(conn)
+    def getBooksId(self):
+        with self.engine.connect() as conn:
+            select_query = """SELECT id FROM public."Book" """
+            df = pd.read_sql(select_query, conn)
+            return df
+
+    def getBooksIdRatedByUser(self, user_id):
+        with self.engine.connect() as conn:
+            select_query = text("""
+                SELECT "id"
+                FROM public."Book"
+                WHERE id IN (
+                    SELECT "bookId"
+                    FROM public."Rating"
+                    WHERE "userId" = :user_id
+                )
+            """)
+            params = {"user_id": user_id}
+            df = pd.read_sql(select_query, conn, params=params)
+            return df
+
+    def getRatingsByUser(self, user_id):
+        with self.engine.connect() as conn:
+            select_query = text("""
+                SELECT "id" as "ratingId", "bookId" as "id", "rate"
+                FROM public."Rating"
+                WHERE "userId" = :user_id
+            """)
+            params = {"user_id": user_id}
+            df = pd.read_sql(select_query, conn, params=params)
+            return df
 
     def getRatings(self, start: datetime = None, end: datetime = None):
-        conn = self.connection_pool.getconn()
-        try:
-            with conn.cursor() as curs:
-                if start and end:
-                    select_query = """SELECT * FROM public."Rating" WHERE "createdAt" BETWEEN %s AND %s"""
-                    curs.execute(select_query, (start, end))
-                    rows = curs.fetchall()
-                    return rows
-                else:
-                    return None
-        finally:
-            self.connection_pool.putconn(conn)
+        with self.engine.connect() as conn:
+            if start and end:
+                select_query = text(
+                    """SELECT * FROM public."Rating" WHERE "createdAt" BETWEEN :start AND :end""")
+                params = {"start": start, "end": end}
+                df = pd.read_sql(select_query, conn, params=params)
+                return df
+            else:
+                return None
 
 
 if __name__ == '__main__':
@@ -55,5 +66,7 @@ if __name__ == '__main__':
     print(f'connecting to db..., {dbname}, {host}, {port}')
     db = DB(dbname, user, port, password, host)
     print(f'connected to db')
-    print(db.getRatings(datetime(year=2023, month=4, day=8),
-          datetime(year=2023, month=4, day=9)))
+    # print(db.getRatings(datetime(year=2023, month=4, day=8),
+    #       datetime(year=2023, month=4, day=9)))
+    # print(db.getBooksId())
+    print(db.getAllBooksRatedByUser('35704'))
