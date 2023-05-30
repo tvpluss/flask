@@ -48,7 +48,7 @@ class DB:
         with self.engine.connect() as conn:
             if start and end:
                 select_query = text(
-                    """SELECT * FROM public."Rating" WHERE "updatedAt" BETWEEN :start AND :end""")
+                    """SELECT * FROM public."Rating" WHERE "isDeleted" is False AND "updatedAt" BETWEEN :start AND :end""")
                 params = {"start": start, "end": end}
                 df = pd.read_sql(select_query, conn, params=params)
                 return df
