@@ -2,7 +2,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.pool import QueuePool
 import os
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 
 
@@ -48,7 +48,7 @@ class DB:
         with self.engine.connect() as conn:
             if start and end:
                 select_query = text(
-                    """SELECT * FROM public."Rating" WHERE "createdAt" BETWEEN :start AND :end""")
+                    """SELECT * FROM public."Rating" WHERE "updatedAt" BETWEEN :start AND :end""")
                 params = {"start": start, "end": end}
                 df = pd.read_sql(select_query, conn, params=params)
                 return df
@@ -66,7 +66,7 @@ if __name__ == '__main__':
     print(f'connecting to db..., {dbname}, {host}, {port}')
     db = DB(dbname, user, port, password, host)
     print(f'connected to db')
-    # print(db.getRatings(datetime(year=2023, month=4, day=8),
-    #       datetime(year=2023, month=4, day=9)))
+    print(db.getRatings(datetime.now(timezone.utc) - timedelta(hours=1),
+          datetime.now(timezone.utc)))
     # print(db.getBooksId())
-    print(db.getAllBooksRatedByUser('35704'))
+    # print(db.getAllBooksRatedByUser('35704'))

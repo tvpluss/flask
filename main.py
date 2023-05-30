@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 import time
 from dotenv import load_dotenv
@@ -110,8 +110,8 @@ def recommender(uid):
 
 def update_model():
     try:
-        now = datetime.now()
-        prev = datetime.now() - timedelta(hours=1)
+        now = datetime.now(timezone.utc)
+        prev = datetime.now(timezone.utc) - timedelta(hours=1)
         app.logger.info(f'update model at {now}')
         updated_ratings = db.getRatings(prev, now)
         # Keep only rate, userId, and bookId columns and rename them
