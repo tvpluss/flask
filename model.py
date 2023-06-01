@@ -4,7 +4,7 @@ import pandas as pd
 
 
 class MFModel:
-    def __init__(self) -> None:
+    def __init__(self, path) -> None:
         biased_mf_params = {
             'n_factors': 10,
             'bias_optimizer': optim.SGD(0.025),
@@ -15,14 +15,18 @@ class MFModel:
             'l2_latent': 0.
         }
         self.model = reco.BiasedMF(**biased_mf_params)
+        self.path = path
 
-    def load_model(self, path):
-        with open(path, 'rb') as f:
+    def load_model(self):
+        with open(self.path, 'rb') as f:
             self.model = pickle.load(f)
 
-    def save_model(self, path):
-        with open(path, 'wb') as f:
+    def save_model(self):
+        with open(self.path, 'wb') as f:
             pickle.dump(self.model, f)
+
+    def unload_model(self):
+        del self.model
 
     def transform(self, df: pd.DataFrame):
         y = df.pop('rate')
@@ -71,11 +75,22 @@ class MFModel:
 
 
 if __name__ == '__main__':
+    import time
+
+    start_time = time.perf_counter()
+
+    # Your code here
+
     model = MFModel()
     model.load_model('./model/MF_model.pkl')
-    data = [['278066', '0062737465', 4],
-            ['277978', '0896083535', 4],
-            ['277965', '1888387408', 3]]
-    df = pd.DataFrame(data, columns=['user', 'item', 'rate'])
-    print(df)
-    print(model.test(df))
+    print('loaded model')
+    end_time = time.perf_counter()
+    elapsed_time = end_time - start_time
+
+    print(f"Elapsed time: {elapsed_time:.5f} seconds")
+    # data = [['278066', '0062737465', 4],
+    #         ['277978', '0896083535', 4],
+    #         ['277965', '1888387408', 3]]
+    # df = pd.DataFrame(data, columns=['user', 'item', 'rate'])
+    # print(df)
+    # print(model.test(df))

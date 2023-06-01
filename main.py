@@ -51,8 +51,7 @@ api_secret_key = os.environ.get('api_secret_key')
 
 app = Flask(__name__)
 
-model = MFModel()
-model.load_model('./model/MF_model.pkl')
+model = MFModel('./model/MF_model.pkl')
 scheduler = APScheduler()
 
 
@@ -95,6 +94,7 @@ def testDB():
 @api_key_required
 def recommender(uid):
     try:
+        model.load_model()
         app.logger.info(f'getting recommender for uid: {uid}')
         rated_books = db.getBooksIdRatedByUser(uid)
         if len(rated_books.index) < 3:
@@ -106,6 +106,8 @@ def recommender(uid):
         return jsonify(prediction.to_dict('records'))
     except Exception as e:
         return Response(response=e, status=404)
+    finally:
+        model.unload_model()
 
 
 def update_model():
@@ -113,6 +115,7 @@ def update_model():
         now = datetime.now(timezone.utc)
         prev = datetime.now(timezone.utc) - timedelta(hours=1)
         app.logger.info(f'update model at {now}')
+        model.load_model()
         updated_ratings = db.getRatings(prev, now)
         # Keep only rate, userId, and bookId columns and rename them
         updated_ratings = updated_ratings.loc[:, ['rate', 'userId', 'bookId']].rename(columns={
@@ -123,14 +126,13 @@ def update_model():
             app.logger.info(
                 f'adding {len(updated_ratings.index)} records to model')
             model.train(updated_ratings)
-            model.save_model('./model/MF_model.pkl')
-
-            # Reload for good measure
-            model.load_model('./model/MF_model.pkl')
+            model.save_model()
         else:
             app.logger.info(f'no new date for model')
     except Exception as e:
         app.logger.error(e)
+    finally:
+        model.unload_model()
 
 
 scheduler.add_job(id='Scheduled task', func=update_model,
