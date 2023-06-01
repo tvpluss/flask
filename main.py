@@ -82,12 +82,12 @@ def index():
     return jsonify({"Choo Choo": "Welcome to your Flask app 🚅"})
 
 
-@app.route('/test_db')
-@api_key_required
-def testDB():
-    books = db.getBooksId()
-    print(books)
-    return jsonify(db.getBooksId())
+# @app.route('/test_db')
+# @api_key_required
+# def testDB():
+#     books = db.getBooksId()
+#     print(books)
+#     return jsonify(db.getBooksId())
 
 
 @app.route('/recommender/<uid>')
