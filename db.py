@@ -14,7 +14,7 @@ class DB:
 
     def getBooksId(self):
         with self.engine.connect() as conn:
-            select_query = """SELECT id FROM public."Book" """
+            select_query = """SELECT id FROM public."Book" WHERE "isDeleted" is False and "privacy" is False """
             df = pd.read_sql(select_query, conn)
             return df
 
